@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>attention_experiment</title>
+    <script src="jspsych-6.0.5/jspsych.js"></script>
+    <script src="jspsych-6.0.5/plugins/jspsych-html-keyboard-response.js"></script>
+    <script src="jspsych-6.0.5/plugins/jspsych-image-keyboard-response.js"></script>
+    <script>
+    //face display randomization
+        const Bucket = function(array, weight) {
+            this._array = array;
+            this.weight = weight;
+        };
+        Bucket.prototype.length = function() {
+            return this._array.length;
+        };
+        Bucket.prototype.filter = function(callback) {
+            return this._array.filter(callback);
+        };
+        Bucket.prototype.setWeight = function(newWeight) {
+            this.weight = newWeight;
+        };
+        Bucket.prototype.removeSample = function(sample) {
+            this._array = this.filter(function(val) {
+                return !sample.includes(val);
+            });
+        };
+        Bucket.prototype.sample = function() {
+            const sample = jsPsych.randomization.sampleWithoutReplacement(
+                this._array,
+                2
+            );
+            this.removeSample(sample);
+            return sample;
+        }
+
+        const StimuliRandomizer = function(stimuli) {
+            this.weightTotal = stimuli.reduce(function(acc, bucketArray) {
+                acc + bucketArray.length
+            }, 0);
+
+            this._stimuli = stimuli.map(function(bucketArray) {
+                return new Bucket(bucketArray, bucketArray.length / this.weightTotal);
+            });
+        };
+        StimuliRandomizer.prototype.sample = function() {
+            return jsPsych.randomization.sampleWithoutReplacement(
+                this._stimuli,
+                1,
+                this.getWeights()
+            )[0];
+        }
+        StimuliRandomizer.prototype.getWeights = function() {
+            return this._stimuli.map(function(bucket) {
+                return bucket.weight;
+            });
+        };
+        StimuliRandomizer.prototype.calculateWeight = function() {
+            this._stimuli.forEach(function(bucket) {
+                bucket.setWeight(bucket.length() / this.weightTotal);
+            });
+        };
+        StimuliRandomizer.prototype.getSample = function() {
+            const bucket = this.sample();
+            const sample = bucket.sample();
+            this.weightTotal -= sample.length;
+            this.calculateWeight();
+            return sample; 
+        };
+
+        window.StimuliRandomizer = StimuliRandomizer;
+
+    // letter array randomization //
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    </script>
+    <link href="jspsych-6.0.5/css/jspsych.css" rel="stylesheet" type="text/css"></link>
+    <style>
+        p {
+            margin: 0.5rem 0.5rem;
+        }
+        body {
+            background-color: #808080;
+            color: #fff;
+        }
+    </style>
+  </head>
+  <body></body>
+  <script>
+    // create timeline 
+    var timeline = [];
+
+    // define welcome screens 
+    var welcome_1 = {
+      type: "html-keyboard-response",
+      stimulus: `
+        <div>
+            <div style="height: 90vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <p>Welcome to the experiment!</p>
+                <p>On the next screen, you will see instructions for this study.</p>
+            </div>
+            <div>
+                <p style="margin: 0 auto"> Press ENTER to continue.</p>
+            </div>
+        </div>
+      `,
+      choices: ['enter']
+    };
+    timeline.push(welcome_1);
+/*
+    var welcome_2 = {
+      type: "html-keyboard-response",
+      stimulus: `
+      <div>
+        <div style = "height: 90vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <p>There are three parts in this experiment; You will be participating in the second part of three.
+            The primary purpose of this study is to examine how people make simple intuitive social decisions 
+            while engaging in other cognitive tasks. </p>
+            <p><p>Specifically, we are interested in how the presence of faces can influence performance in attention-related tasks. 
+            For this reason, you will be paired with current students attending the University of Colorado.</p></p>
+        </div>
+        <div>
+            <p style="margin: 0 auto"> Press ENTER to continue on to the instructions. </p> 
+        </div>
+    </div>
+    `,
+    choices: ['enter']
+    };
+    timeline.push(welcome_2);
+
+    // define instructions introduction 
+    var instructions = {
+        type: "html-keyboard-response",
+        stimulus: `
+        <div>
+            <div style = "height: 90vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <p>You will take part in several trials each involving two tasks.</p>
+                <p>Each trial will first begin with a search task. Specifically, you will be searching for a single letter within a sequence of 
+                many letters.</p>
+                <p><p>Second, you will take part in a decision task. You will be asked to choose whether to give hypothetical sums of money 
+                (e.g., $1) to some of the University of Colorado participants you will be randomly paired with.</p></p>
+            </div>
+            <div>
+                <p style="margin: 0 auto"> Press ENTER to continue. </p> 
+            </div>
+        </div>
+        `,
+        choices: ['enter']
+        };
+        timeline.push(instructions);
+
+        // define search task instructions 
+        var search_1 = {
+        type: "html-keyboard-response",
+        stimulus: `
+        <div>
+            <div style = "height: 90vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <p>Let's first begin by describing the search task.</p>
+            </div>
+            <div>
+                <p style="margin: 0 auto"> Press ENTER to continue. </p> 
+            </div>
+        </div>
+        `,
+        choices: ['enter']
+        };
+        timeline.push(search_1);
+
+        var search_2 = {
+        type: "html-keyboard-response",
+        stimulus: `
+        <div>
+            <div style = "display: flex; flex-direction: column; align-items: center; justify-content: top;">
+                <p>Before each search task, you will be oriented to the side of the screen letters will be displayed.</p>
+                <p>When letters will be displayed on the right side, you will see a right-pointing arrow, ">".</p>
+                <p>When the letters will be displayed on the left side, you will see a left-pointing arrow, "<". (see example below). </p>
+            </div>
+            <div style = "height: 75vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <p><strong>The basic layout of the screen will look like this:</strong></p>
+                <img src='./jspsych-6.0.5/demo_image_1.png'>
+            </div>
+            <div>
+                <p style="margin: 0 auto"> Press ENTER to continue. </p> 
+            </div>
+        </div>
+        `,
+        choices: ['enter']
+        };
+        timeline.push(search_2);
+
+        var search_3 = {
+        type: "html-keyboard-response",
+        stimulus: `
+        <div>
+            <div style = "display: flex; flex-direction: column; align-items: center; justify-content: top;">
+                <p>Shortly after, the arrow will disappear, and letters will begin cycling through on the side of screen the arrow pointed to.</p>
+            </div>
+            <div style = "height: 75vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <p><strong>The basic layout of the screen will look like this:</strong></p>
+                <img src='.//jspsych-6.0.5/demo_letters.jpg'>
+            </div>
+            <div>
+                <p style="margin: 0 auto"> Press ENTER to continue the search task description. </p> 
+            </div>
+        </div>
+        `,
+        choices: ['enter']
+        };
+        timeline.push(search_3);
+        
+        var search_4 = {
+        type: "html-keyboard-response",
+        stimulus: `
+        <div>
+            <div style = "display: flex; flex-direction: column; align-items: center; justify-content: top;">
+                <p>A few seconds later, the University of Colorado participants will appear side-by-side below the cycling letters.</p>
+            </div>
+            <div style = "height: 75vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <p><strong>The basic layout of the screen will look like this:</strong></p>
+                <img src='./jspsych-6.0.5/demo_image_2.png'>
+            </div>
+            <div>
+                <p style="margin: 0 auto"> Press ENTER to continue the search task description. </p> 
+            </div>
+        </div>
+        `,
+        choices: ['enter']
+        };
+        timeline.push(search_4);
+
+        var search_5 = {
+        type: "html-keyboard-response",
+        stimulus: `
+        <div>
+            <div style = "display: flex; flex-direction: column; align-items: center; justify-content: top;">
+                <p>During this task, your goal is to read the letters as they appear and to press the SPACE key if any "X" 
+                appears in the letter sequence. If no "X" appears, do not press any button. Some letter sequences will 
+                have one or more "X". Others will contain no "X".</p>
+            </div>
+            <div style = "height: 75vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <p><strong>The basic layout of the screen will look like this:</strong></p>
+                <img src='./jspsych-6.0.5/demo_image_2.png'>
+            </div>
+            <div>
+                <p style="margin: 0 auto"> Press ENTER to continue the search task description. </p> 
+            </div>
+        </div>
+        `,
+        choices: ['enter']
+        };
+        timeline.push(search_5);
+
+        var search_6 = {
+        type: "html-keyboard-response",
+        stimulus: `
+        <div>
+            <div style = "display: flex; flex-direction: column; align-items: center; justify-content: top;">
+                <p>After the search task, you will be asked a few questions about what you saw and then move on to the 
+                second task, the deicison task.</p>
+            </div>
+            <div style = "height: 75vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <p><strong>The basic layout of the screen will look like this:</strong></p>
+                <img src='./jspsych-6.0.5/demo_image_3.jpg'>
+            </div>
+            <div>
+                <p style="margin: 0 auto"> Press ENTER to continue. </p> 
+            </div>
+        </div>
+        `,
+        choices: ['enter']
+        };
+        timeline.push(search_6);
+
+        // define decision task 
+        var decision_1 = {
+        type: "html-keyboard-response",
+        stimulus: `
+        <div>
+            <div style = "height: 90vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <p>Let's first begin by describing the decision task.</p>
+            </div>
+            <div>
+                <p style="margin: 0 auto"> Press ENTER to continue on to the decision task description. </p> 
+            </div>
+        </div>
+        `,
+        choices: ['enter']
+        };
+        timeline.push(decision_1);
+
+        var decision_2 = {
+        type: "html-keyboard-response",
+        stimulus: `
+        <div>
+            <div style = "display: flex; flex-direction: column; align-items: center; justify-content: top;">
+                <p>During this task, there are two roles: <strong>First Mover</strong> and <strong>Second Mover</strong>.</p>
+                <p>You will be assigned to the role of <strong>First Mover</strong>, and you will decide which other player
+                you want to be <strong>Second Mover</strong>. To begin, each participant will be allotted $1.00.</p>
+            </div>
+            <div style = "height: 75vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <p><strong>The basic layout of the screen will look like this:</strong></p>
+                <img src='./jspsych-6.0.5/demo_a.png'>
+            </div>
+            <div>
+                <p style="margin: 0 auto"> Press ENTER to continue with the decision task description. </p> 
+            </div>
+        </div>
+        `,
+        choices: ['enter']
+        };
+        timeline.push(decision_2);
+
+        var decision_3 = {
+        type: "html-keyboard-response",
+        stimulus: `
+        <div>
+            <div style = "display: flex; flex-direction: column; align-items: center; justify-content: top;">
+                <p><strong>First Mover Role:</strong></p>
+                <p>You will then be ask to choose which of the other two participants you would like to trust with you $1.00.
+                 The participant you choose will be assigned to the role of <strong>Second Mover</strong>. The money will be 
+                 multiplied by 4 and placed in the <strong>Second Mover's</strong> account (e.g., $1.00 x 4 = $4.00 placed 
+                 in <strong>Second Mover's</strong> account).</p>
+            </div>
+            <div style = "height: 75vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <p><strong>The basic layout of the screen will look like this:</strong></p>
+                <img src='./jspsych-6.0.5/demo_b.png'>
+            </div>
+            <div>
+                <p style="margin: 0 auto"> Press ENTER to continue. </p> 
+            </div>
+        </div>
+        `,
+        choices: ['enter']
+        };
+        timeline.push(decision_3);
+
+        var decision_4 = {
+        type: "html-keyboard-response",
+        stimulus: `
+        <div>
+            <div style = "display: flex; flex-direction: column; align-items: center; justify-content: top;">
+                <p><strong>First Mover Role:</strong></p>
+                <p>In the demonstration below, the <strong>First Mover</strong> has chosen the green highlighted participant 
+                on the right side to trust their $1.00 with. As a result, the chosen participant is assigned to the role of 
+                <strong>Second Mover</strong>. The <strong>Second Mover</strong> then has $4.00 added to their account.</p>
+            </div>
+            <div style = "height: 75vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <p><strong>The basic layout of the screen will look like this:</strong></p>
+                <img src='./jspsych-6.0.5/demo_c.png'>
+            </div>
+            <div>
+                <p style="margin: 0 auto"> Press ENTER to continue. </p> 
+            </div>
+        </div>
+        `,
+        choices: ['enter']
+        };
+        timeline.push(decision_4);
+
+        var decision_5 = {
+        type: "html-keyboard-response",
+        stimulus: `
+        <div>
+            <div style = "display: flex; flex-direction: column; align-items: center; justify-content: top;">
+                <p><strong>Second Mover Role:</strong></p>
+                <p>One you, <strong>First Mover</strong>, has made you choice during the decision task, the <strong>Second 
+                Mover</strong> will later return to the lab to take part in the first, and last, portion of the experiment.</p>
+            </div>
+            <div style = "height: 75vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <p><strong>The basic screen layout Second Mover will see looks like this:</strong></p>
+                <img src='./jspsych-6.0.5/demo_d.png'>
+            </div>
+            <div>
+                <p style="margin: 0 auto"> Press ENTER to continue. </p> 
+            </div>
+        </div>
+        `,
+        choices: ['enter']
+        };
+        timeline.push(decision_5);
+
+        var decision_6 = {
+        type: "html-keyboard-response",
+        stimulus: `
+        <div>
+            <div style = "display: flex; flex-direction: column; align-items: center; justify-content: top;">
+                <p><strong>Second Mover Role:</strong></p>
+                <p>The <strong>Second Mover</strong> will be able to see the participants you, the <strong>First Mover</strong>, 
+                chose between and how much money you trusted the <strong>Second Mover</strong> with.
+            </div>
+            <div style = "height: 75vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <p><strong>The basic screen layout Second Mover will see looks like this:</strong></p>
+                <img src='./jspsych-6.0.5/demo_d.png'>
+            </div>
+            <div>
+                <p style="margin: 0 auto"> Press ENTER to continue. </p> 
+            </div>
+        </div>
+        `,
+        choices: ['enter']
+        };
+        timeline.push(decision_6);
+
+        var decision_7 = {
+        type: "html-keyboard-response",
+        stimulus: `
+        <div>
+            <div style = "display: flex; flex-direction: column; align-items: center; justify-content: top;">
+                <p><strong>Second Mover Role:</strong></p>
+                <p>The <strong>Second Mover</strong> will then have the oppotunity to return as little as $0.00 and as much 
+                as the amount they received from you, the <strong>First Mover</strong>, ($4.00 in this example) or any 
+                amount in between.</p>
+            </div>
+            <div style = "height: 75vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <p><strong>The basic screen layout Second Mover will see looks like this:</strong></p>
+                <img src='./jspsych-6.0.5/demo_e.png'>
+            </div>
+            <div>
+                <p style="margin: 0 auto"> Press ENTER to continue. </p> 
+            </div>
+        </div>
+        `,
+        choices: ['enter']
+        };
+        timeline.push(decision_7);
+
+        var decision_8 = {
+        type: "html-keyboard-response",
+        stimulus: `
+        <div>
+            <div style = "display: flex; flex-direction: column; align-items: center; justify-content: top;">
+                <p><strong>Second Mover Role:</strong></p>
+                <p>The amount they return will not be multiplied by 4, it will simply be placed directly into your, the 
+                <strong>First Mover’s</strong>, account. In this example, the <strong>Second Mover</strong> has chosen to 
+                give back $2.50 to the <strong>First Mover</strong>, which will be taken out of the <strong>Second Mover’s</strong> 
+                account and placed in the <strong>First Mover’s</strong> account.</p>
+            </div>
+            <div style = "height: 75vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <p><strong>The basic screen layout Second Mover will see looks like this:</strong></p>
+                <img src='./jspsych-6.0.5/demo_e.png'>
+            </div>
+            <div>
+                <p style="margin: 0 auto"> Press ENTER to continue.</p> 
+            </div>
+        </div>
+        `,
+        choices: ['enter']
+        };
+        timeline.push(decision_8);
+
+        var decision_9 = {
+        type: "html-keyboard-response",
+        stimulus: `
+        <div>
+            <div style = "display: flex; flex-direction: column; align-items: center; justify-content: top;">
+                <p>In the example, at the end of the task, the <strong>First Mover<strong>, you,would have $2.50 and the 
+                <strong>Second Mover</strong>, the participant you chose, would also have $2.50.</p>
+            </div>
+            <div style = "height: 75vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <p><strong>The basic screen layout Second Mover will see looks like this:</strong></p>
+                <img src='./jspsych-6.0.5/demo_g.png'>
+            </div>
+            <div>
+                <p style="margin: 0 auto"> Press ENTER to continue. </p> 
+            </div>
+        </div>
+        `,
+        choices: ['enter']
+        };
+        timeline.push(decision_9);
+*/
+        // female arrays
+        const faceRandomizer = new window.StimuliRandomizer([
+            [ 
+                // White Females
+                "./jspsych-6.0.5/females/WF_1.jpg",
+                "./jspsych-6.0.5/females/WF_2.jpg",
+                "./jspsych-6.0.5/females/WF_3.jpg",
+                "./jspsych-6.0.5/females/WF_4.jpg",
+                "./jspsych-6.0.5/females/WF_5.jpg",
+                "./jspsych-6.0.5/females/WF_6.jpg",
+                "./jspsych-6.0.5/females/WF_7.jpg",
+                "./jspsych-6.0.5/females/WF_8.jpg",
+                "./jspsych-6.0.5/females/WF_9.jpg",
+                "./jspsych-6.0.5/females/WF_10.jpg",
+                "./jspsych-6.0.5/females/WF_12.jpg",
+                "./jspsych-6.0.5/females/WF_13.jpg",
+                "./jspsych-6.0.5/females/WF_14.jpg",
+                "./jspsych-6.0.5/females/WF_15.jpg",
+                "./jspsych-6.0.5/females/WF_16.jpg",
+                "./jspsych-6.0.5/females/WF_17.jpg",
+                "./jspsych-6.0.5/females/WF_18.jpg",
+                "./jspsych-6.0.5/females/WF_19.jpg",
+                "./jspsych-6.0.5/females/WF_21.jpg",
+                "./jspsych-6.0.5/females/WF_22.jpg",
+                "./jspsych-6.0.5/females/WF_23.jpg",
+                "./jspsych-6.0.5/females/WF_24.jpg",
+                "./jspsych-6.0.5/females/WF_25.jpg",
+                "./jspsych-6.0.5/females/WF_26.jpg",
+                "./jspsych-6.0.5/females/WF_27.jpg",
+                "./jspsych-6.0.5/females/WF_28.jpg",
+                "./jspsych-6.0.5/females/WF_29.jpg",
+                "./jspsych-6.0.5/females/WF_31.jpg",
+                "./jspsych-6.0.5/females/WF_32.jpg",
+                "./jspsych-6.0.5/females/WF_33.jpg",
+                "./jspsych-6.0.5/females/WF_34.jpg",
+                "./jspsych-6.0.5/females/WF_35.jpg",
+                "./jspsych-6.0.5/females/WF_36.jpg",
+                "./jspsych-6.0.5/females/WF_37.jpg",
+                "./jspsych-6.0.5/females/WF_38.jpg",
+                "./jspsych-6.0.5/females/WF_39.jpg",
+                "./jspsych-6.0.5/females/WF_41.jpg",
+                "./jspsych-6.0.5/females/WF_42.jpg",
+                "./jspsych-6.0.5/females/WF_43.jpg",
+                "./jspsych-6.0.5/females/WF_44.jpg",
+                "./jspsych-6.0.5/females/WF_45.jpg",
+                "./jspsych-6.0.5/females/WF_46.jpg",
+                "./jspsych-6.0.5/females/WF_47.jpg",
+                "./jspsych-6.0.5/females/WF_48.jpg",
+                "./jspsych-6.0.5/females/WF_49.jpg",
+                "./jspsych-6.0.5/females/WF_51.jpg",
+                "./jspsych-6.0.5/females/WF_52.jpg",
+                "./jspsych-6.0.5/females/WF_53.jpg",
+                "./jspsych-6.0.5/females/WF_54.jpg",
+                "./jspsych-6.0.5/females/WF_55.jpg",
+                "./jspsych-6.0.5/females/WF_56.jpg",
+                "./jspsych-6.0.5/females/WF_57.jpg",
+                "./jspsych-6.0.5/females/WF_58.jpg",
+                "./jspsych-6.0.5/females/WF_59.jpg",
+                "./jspsych-6.0.5/females/WF_61.jpg",
+                "./jspsych-6.0.5/females/WF_62.jpg",
+                "./jspsych-6.0.5/females/WF_63.jpg",
+                "./jspsych-6.0.5/females/WF_64.jpg",
+                "./jspsych-6.0.5/females/WF_65.jpg",
+                "./jspsych-6.0.5/females/WF_66.jpg",
+                "./jspsych-6.0.5/females/WF_67.jpg",
+                "./jspsych-6.0.5/females/WF_68.jpg",
+                "./jspsych-6.0.5/females/WF_69.jpg",
+                "./jspsych-6.0.5/females/WF_71.jpg",
+                "./jspsych-6.0.5/females/WF_72.jpg",
+                "./jspsych-6.0.5/females/WF_73.jpg",
+                "./jspsych-6.0.5/females/WF_74.jpg",
+                "./jspsych-6.0.5/females/WF_75.jpg",
+                "./jspsych-6.0.5/females/WF_76.jpg",
+                "./jspsych-6.0.5/females/WF_77.jpg",
+                // "./jspsych-6.0.5/females/WF_78.jpg" // Odd numbers not supported
+            ], [
+                // Asian Females
+                "./jspsych-6.0.5/females/AF_1.jpg",
+                "./jspsych-6.0.5/females/AF_2.jpg",
+                "./jspsych-6.0.5/females/AF_3.jpg",
+                "./jspsych-6.0.5/females/AF_4.jpg",
+                "./jspsych-6.0.5/females/AF_5.jpg",
+                "./jspsych-6.0.5/females/AF_6.jpg",
+                // "./jspsych-6.0.5/females/AF_7.jpg" // Odd numbers not supported
+            ], [
+                // Black Females
+                "./jspsych-6.0.5/females/AF_1.jpg",
+                "./jspsych-6.0.5/females/AF_2.jpg",
+                "./jspsych-6.0.5/females/AF_3.jpg",
+                "./jspsych-6.0.5/females/AF_4.jpg"
+            ], [
+                // Middle Eastern Females
+                "./jspsych-6.0.5/females/MEF_1.jpg",
+                "./jspsych-6.0.5/females/MEF_2.jpg",
+                "./jspsych-6.0.5/females/MEF_3.jpg",
+                "./jspsych-6.0.5/females/MEF_4.jpg"
+            ], [
+                // Latin Females
+                "./jspsych-6.0.5/females/LF_1.jpg",
+                "./jspsych-6.0.5/females/LF_2.jpg",
+                "./jspsych-6.0.5/females/LF_3.jpg",
+                "./jspsych-6.0.5/females/LF_4.jpg",
+                "./jspsych-6.0.5/females/LF_5.jpg",
+                "./jspsych-6.0.5/females/LF_6.jpg",
+                "./jspsych-6.0.5/females/LF_7.jpg",
+                "./jspsych-6.0.5/females/LF_8.jpg",
+                "./jspsych-6.0.5/females/LF_9.jpg",
+                "./jspsych-6.0.5/females/LF_10.jpg",
+                // "./jspsych-6.0.5/females/LF_11.jpg" // Odd numbers not suppoted
+            ], [
+                // Hazey Female
+                "./jspsych-6.0.5/females/HF_1.jpg",
+                "./jspsych-6.0.5/females/HF_2.jpg",
+                "./jspsych-6.0.5/females/HF_3.jpg",
+                "./jspsych-6.0.5/females/HF_4.jpg",
+                "./jspsych-6.0.5/females/HF_5.jpg",
+                "./jspsych-6.0.5/females/HF_6.jpg"
+            ], [
+                // White Male
+                "./jspsych-6.0.5/males/WM_1.jpg",
+                "./jspsych-6.0.5/males/WM_2.jpg",
+                "./jspsych-6.0.5/males/WM_3.jpg",
+                "./jspsych-6.0.5/males/WM_4.jpg",
+                "./jspsych-6.0.5/males/WM_5.jpg",
+                "./jspsych-6.0.5/males/WM_6.jpg",
+                "./jspsych-6.0.5/males/WM_7.jpg",
+                "./jspsych-6.0.5/males/WM_8.jpg",
+                "./jspsych-6.0.5/males/WM_9.jpg",
+                "./jspsych-6.0.5/males/WM_10.jpg",
+                "./jspsych-6.0.5/males/WM_12.jpg",
+                "./jspsych-6.0.5/males/WM_13.jpg",
+                "./jspsych-6.0.5/males/WM_14.jpg",
+                "./jspsych-6.0.5/males/WM_15.jpg",
+                "./jspsych-6.0.5/males/WM_16.jpg",
+                "./jspsych-6.0.5/males/WM_17.jpg",
+                "./jspsych-6.0.5/males/WM_18.jpg",
+                "./jspsych-6.0.5/males/WM_19.jpg",
+                "./jspsych-6.0.5/males/WM_21.jpg",
+                "./jspsych-6.0.5/males/WM_22.jpg",
+                "./jspsych-6.0.5/males/WM_23.jpg",
+                "./jspsych-6.0.5/males/WM_24.jpg",
+                "./jspsych-6.0.5/males/WM_25.jpg",
+                "./jspsych-6.0.5/males/WM_26.jpg",
+                "./jspsych-6.0.5/males/WM_27.jpg",
+                "./jspsych-6.0.5/males/WM_28.jpg",
+                "./jspsych-6.0.5/males/WM_29.jpg",
+                "./jspsych-6.0.5/males/WM_31.jpg",
+                "./jspsych-6.0.5/males/WM_32.jpg",
+                "./jspsych-6.0.5/males/WM_33.jpg",
+                "./jspsych-6.0.5/males/WM_34.jpg",
+                // "./jspsych-6.0.5/males/WM_35.jpg" // Odd numbers not suppoted
+            ], [
+                // Hazey Male
+                "./jspsych-6.0.5/males/HM_1.jpg",
+                "./jspsych-6.0.5/males/HM_2.jpg",
+                "./jspsych-6.0.5/males/HM_3.jpg",
+                "./jspsych-6.0.5/males/HM_4.jpg",
+                "./jspsych-6.0.5/males/HM_5.jpg",
+                "./jspsych-6.0.5/males/HM_6.jpg"
+            ], [
+                // Asian Mail
+                "./jspsych-6.0.5/males/AM_1.jpg",
+                "./jspsych-6.0.5/males/AM_2.jpg"
+                //"./jspsych-6.0.5/males/AM_3.jpg" // Odd numbers not supported
+            ], [
+                // Latin Male
+                "./jspsych-6.0.5/males/LM_1.jpg",
+                "./jspsych-6.0.5/males/LM_2.jpg",
+                "./jspsych-6.0.5/males/LM_3.jpg",
+                "./jspsych-6.0.5/males/LM_4.jpg"
+            ],  [
+                // Middle Eastern Males
+                "./jspsych-6.0.5/males/MEM_1.jpg",
+                "./jspsych-6.0.5/males/MEM_2.jpg",
+                "./jspsych-6.0.5/males/MEM_3.jpg",
+                "./jspsych-6.0.5/males/MEM_4.jpg",
+                "./jspsych-6.0.5/males/MEM_5.jpg",
+                "./jspsych-6.0.5/males/MEM_6.jpg"
+            ]
+        ]);
+    
+    var arrowArray =  ['<', '>'];
+    var lettersNoX = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','Y','Z'];
+
+
+function displaySide(sideChoice, letters, images)
+{
+    const lettersOnly = letters.slice(0, 5);
+    const lettersWithImages = letters.slice(5);
+
+    const lettersOnlyTrials = lettersOnly.map(function(letter) {
+        return {
+            type: 'html-keyboard-response',
+                stimulus: `
+                <div style = "display: flex; justify-content: center;">
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-right: 50px;">
+                        <div style = "font-size: 75px;">
+                            <p ${sideChoice === '<' ? '' : 'style="visibility: hidden"'}>
+                                ${letter}
+                            </p>
+                        </div>
+                        <br/>
+                        <img style="visibility: hidden" width="500px" height="375px" src=${images[0]} />
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center;  justify-content: center">
+                        <div style = "font-size: 75px;">
+                            <p ${sideChoice === '>' ? '' : 'style="visibility: hidden"'}>
+                                ${letter}
+                            </p>
+                        </div>
+                        <br />
+                        <img style="visibility: hidden" width="500px" height="375px" src=${images[1]} />
+                    </div>
+                </div>
+                <p style="visibility: hidden">Which person do you choose to donate $1.00 to? </p>
+                `,
+                choices: jsPsych.NO_KEYS,
+                trial_duration: [200]
+        };
+    });
+    const lettersWithImagesTrials = lettersWithImages.map(function(letter) {
+        return {
+            type: 'html-keyboard-response',
+                stimulus: `
+                <div style = "display: flex; justify-content:center;">
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-right: 50px;">
+                        <div style = "font-size: 75px;">
+                            <p ${sideChoice === '<' ? '' : 'style="visibility: hidden"'}>
+                                ${letter}
+                            </p>
+                        </div>
+                        <br/>
+                        <img width="500px" height="375px" src=${images[0]} />
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center;  justify-content: center">
+                        <div style = "font-size: 75px;">
+                            <p ${sideChoice === '>' ? '' : 'style="visibility: hidden"'}>
+                                ${letter}
+                            </p>
+                        </div>
+                        <br/>
+                        <img width="500px" height="375px" src=${images[1]} />
+                    </div>
+                </div>
+                <p style="visibility: hidden">Which person do you choose to donate $1.00 to? </p>
+                `,
+                choices: jsPsych.NO_KEYS,
+                trial_duration: [200]
+        };
+    });
+
+    return lettersOnlyTrials.concat(lettersWithImagesTrials);
+};
+
+
+
+//random choose left/right display for letters
+//display arrow pointing to side with letter displayed
+//first 1 second only letters cycle through on screen
+//faces display after 1 second until 5 seconds
+
+        for (i=0; i < 6; i++)
+        {
+            const sideChoice = jsPsych.randomization.shuffle(arrowArray)[0];
+            const facePair = faceRandomizer.getSample();
+            let withXLetters = lettersNoX.slice(0);
+
+            let xToAdd = [];
+            if (Math.random() <= 0.2) {
+                xToAdd = jsPsych.randomization.sampleWithoutReplacement([['X'], ['X', 'X']], 1);
+            }
+            xToAdd.forEach(function() { withXLetters.shift() });
+            withXLetters = withXLetters.concat(xToAdd);
+            var letterArray = jsPsych.randomization.sampleWithReplacement(withXLetters, 25);
+
+            //display arrow
+            var trial_1 = {
+                type: 'html-keyboard-response',
+                stimulus: `
+                <div style = "font-size: 75px; display: flex; justify-content:center;">
+                    <p> ${sideChoice[0]} </p>        
+                </div>
+                `,
+                choices: jsPsych.NO_KEYS,
+                trial_duration: [1500]
+                };
+
+            timeline.push(trial_1);
+        
+            const letterTrials = displaySide(sideChoice, letterArray, facePair);
+            timeline = timeline.concat(letterTrials);
+
+            var trial_3 = {
+                type: 'html-keyboard-response',
+                stimulus: `
+                <div style="display: flex; justify-content: center;">
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-right: 50px;">
+                        <div style = "font-size: 75px;">
+                            <p style="visibility: hidden">A</p>
+                        </div>
+                        <br/>
+                        <img width="500px" height="375px" src=${facePair[0]} />
+                    </div>
+                    <div style="display: flex; flex-direction: column; align-items: center;  justify-content: center">
+                        <div style = "font-size: 75px;">
+                            <p style="visibility: hidden">A</p>
+                        </div>
+                        <br />
+                        <img width="500px" height="375px" src=${facePair[1]} />
+                    </div>
+                </div>
+                <p>Which person do you choose to donate $1.00 to? </p>
+                `,
+                choices: ['leftarrow', 'rightarrow'],
+                };
+
+                const trial_test = {
+                    timeline: [
+                        trial_1,
+                    ]
+                }
+
+            timeline.push(trial_3);
+        }
+
+
+    /* start the experiment */
+    jsPsych.init({
+      timeline: timeline,
+      on_finish: function() {
+        jsPsych.data.displayData();
+      }
+    });
+  </script>
+</html>
